@@ -143,13 +143,13 @@ Storage_Container = {
   Storage-Container-2 = {
     name                  = "backend-container"
     storage_account_name  = "backendstorage879879"
-    container_access_type = "blob"
+    container_access_type = "private"
     resource_group_name   = "Resource-Group-2"
   }
   Storage-Container-3 = {
     name                  = "database-container"
     storage_account_name  = "databasestorage879879"
-    container_access_type = "container"
+    container_access_type = "private"
     resource_group_name   = "Resource-Group-3"
   }
 }
