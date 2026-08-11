@@ -1,0 +1,1 @@
+variable "windows_virtual_machines" {}
