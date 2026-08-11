@@ -198,7 +198,7 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: |
           terraform plan \
-            -var-file="terraform.tfvars" \
+            -var-file="Terraform.tfvars" \
             -input=false \
             -out=tfplan
 
