@@ -1,0 +1,113 @@
+name: Terraform Scan, Plan & Apply
+
+on:
+  push:
+    branches:
+      - "feature/**"
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  terraform-ci:
+
+    name: Terraform Scan & Plan
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ==========================================
+      # 1. CHECKOUT REPOSITORY
+      # ==========================================
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+
+      # ==========================================
+      # 2. SETUP TERRAFORM
+      # ==========================================
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+
+      # ==========================================
+      # 3. TERRAFORM VERSION
+      # ==========================================
+
+      - name: Terraform Version
+        run: terraform version
+
+
+      # ==========================================
+      # 4. TERRAFORM INIT
+      # ==========================================
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+
+      # ==========================================
+      # 5. SCAN / VALIDATION
+      # ==========================================
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+
+      - name: Terraform Validate
+        run: terraform validate
+
+
+      # ==========================================
+      # 6. AZURE LOGIN
+      # ==========================================
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+
+     # ==========================================
+      # 8. TERRAFORM PLAN
+      # ==========================================
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+
+      # ==========================================
+      # 9. CHECK PLAN FILE
+      # ==========================================
+
+      - name: Verify Terraform Plan
+        run: |
+          echo "Current directory:"
+          pwd
+
+          echo "Files:"
+          ls -la
+
+          echo "Checking tfplan:"
+          test -f tfplan
+
+          echo "tfplan exists successfully."
+
+
+      # ==========================================
+      # 10. TERRAFORM APPLY
+      # ==========================================
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+        
+        
