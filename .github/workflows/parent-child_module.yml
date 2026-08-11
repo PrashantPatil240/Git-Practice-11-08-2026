@@ -2,23 +2,41 @@ name: Terraform Scan, Plan & Apply
 
 on:
 
-  # Feature branch push
+  # ==========================================================
+  # FEATURE BRANCH
+  # ==========================================================
+
   push:
     branches:
       - "feature/**"
 
-  # Pull Request to main
+  # ==========================================================
+  # PULL REQUEST TO MAIN
+  # ==========================================================
+
   pull_request:
     branches:
       - main
 
-  # Manual execution
+  # ==========================================================
+  # MANUAL RUN
+  # ==========================================================
+
   workflow_dispatch:
+
+
+# ============================================================
+# GITHUB ACTIONS PERMISSIONS
+# ============================================================
 
 permissions:
   contents: read
   id-token: write
 
+
+# ============================================================
+# GLOBAL ENVIRONMENT VARIABLES
+# ============================================================
 
 env:
   TF_WORKING_DIR: Environments/Parent_Modules/DEV
@@ -27,7 +45,7 @@ env:
 jobs:
 
   # ==========================================================
-  # 1. TERRAFORM SCAN
+  # JOB 1 — TERRAFORM SCAN
   # ==========================================================
 
   terraform-scan:
@@ -37,47 +55,73 @@ jobs:
 
     steps:
 
-      # --------------------------------------------------------
+      # ======================================================
       # CHECKOUT
-      # --------------------------------------------------------
+      # ======================================================
 
       - name: Checkout Repository
         uses: actions/checkout@v4
 
 
-      # --------------------------------------------------------
-      # TERRAFORM
-      # --------------------------------------------------------
+      # ======================================================
+      # SETUP TERRAFORM
+      # ======================================================
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
 
+      # ======================================================
+      # TERRAFORM VERSION
+      # ======================================================
+
       - name: Terraform Version
         run: terraform version
 
 
-      # --------------------------------------------------------
+      # ======================================================
+      # CHECK TERRAFORM DIRECTORY
+      # ======================================================
+
+      - name: Check Terraform Directory
+        run: |
+          echo "Terraform Working Directory:"
+          echo "${{ env.TF_WORKING_DIR }}"
+
+          echo ""
+          echo "Files inside Terraform directory:"
+          ls -la "${{ env.TF_WORKING_DIR }}"
+
+          echo ""
+          echo "Terraform files:"
+          find "${{ env.TF_WORKING_DIR }}" \
+            -maxdepth 1 \
+            -type f \
+            -name "*.tf" \
+            -print
+
+
+      # ======================================================
       # TERRAFORM INIT
-      # --------------------------------------------------------
+      # ======================================================
 
       - name: Terraform Init
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform init -backend=false
 
 
-      # --------------------------------------------------------
+      # ======================================================
       # TERRAFORM FORMAT
-      # --------------------------------------------------------
+      # ======================================================
 
       - name: Terraform Format Check
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform fmt -check -recursive
 
 
-      # --------------------------------------------------------
+      # ======================================================
       # TERRAFORM VALIDATE
-      # --------------------------------------------------------
+      # ======================================================
 
       - name: Terraform Validate
         working-directory: ${{ env.TF_WORKING_DIR }}
@@ -85,7 +129,7 @@ jobs:
 
 
   # ==========================================================
-  # 2. TERRAFORM PLAN
+  # JOB 2 — TERRAFORM PLAN
   # ==========================================================
 
   terraform-plan:
@@ -95,64 +139,50 @@ jobs:
 
     needs: terraform-scan
 
-    if: |
-      github.event_name == 'pull_request' ||
-      (github.event_name == 'push' &&
-       startsWith(github.ref, 'refs/heads/feature/'))
-
+    # Plan:
+    # Feature branch push
+    # Pull request
+    # Manual workflow
+    # ======================================================
 
     steps:
 
-      # --------------------------------------------------------
+      # ======================================================
       # CHECKOUT
-      # --------------------------------------------------------
+      # ======================================================
 
       - name: Checkout Repository
         uses: actions/checkout@v4
 
 
-      # --------------------------------------------------------
-      # TERRAFORM
-      # --------------------------------------------------------
+      # ======================================================
+      # SETUP TERRAFORM
+      # ======================================================
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
 
+      # ======================================================
+      # TERRAFORM VERSION
+      # ======================================================
+
       - name: Terraform Version
         run: terraform version
 
 
-      # --------------------------------------------------------
-      # DEBUG DIRECTORY
-      # --------------------------------------------------------
-
-      - name: Check Terraform Directory
-        run: |
-          echo "Repository root:"
-          pwd
-
-          echo ""
-          echo "Terraform working directory:"
-          ls -la "${{ env.TF_WORKING_DIR }}"
-
-          echo ""
-          echo "Terraform files:"
-          find "${{ env.TF_WORKING_DIR }}" -maxdepth 1 -type f -name "*.tf" -print
-
-
-      # --------------------------------------------------------
+      # ======================================================
       # TERRAFORM INIT
-      # --------------------------------------------------------
+      # ======================================================
 
       - name: Terraform Init
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform init -backend=false
 
 
-      # --------------------------------------------------------
+      # ======================================================
       # AZURE LOGIN
-      # --------------------------------------------------------
+      # ======================================================
 
       - name: Azure Login
         uses: azure/login@v2
@@ -160,21 +190,22 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
 
-      # --------------------------------------------------------
+      # ======================================================
       # TERRAFORM PLAN
-      # --------------------------------------------------------
+      # ======================================================
 
-     - name: Terraform Plan
-       working-directory: ${{ env.TF_WORKING_DIR }}
-       run: terraform plan \
-         -var-file="terraform.tfvars" \
-         -input=false \
-         -out=tfplan
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform plan \
+            -var-file="terraform.tfvars" \
+            -input=false \
+            -out=tfplan
 
 
-      # --------------------------------------------------------
-      # VERIFY PLAN
-      # --------------------------------------------------------
+      # ======================================================
+      # VERIFY TERRAFORM PLAN
+      # ======================================================
 
       - name: Verify Terraform Plan
         working-directory: ${{ env.TF_WORKING_DIR }}
@@ -191,12 +222,13 @@ jobs:
 
           test -f tfplan
 
+          echo ""
           echo "tfplan exists successfully."
 
 
-      # --------------------------------------------------------
-      # UPLOAD PLAN
-      # --------------------------------------------------------
+      # ======================================================
+      # UPLOAD TERRAFORM PLAN
+      # ======================================================
 
       - name: Upload Terraform Plan
         if: |
@@ -210,7 +242,7 @@ jobs:
 
 
   # ==========================================================
-  # 3. TERRAFORM APPLY
+  # JOB 3 — TERRAFORM APPLY
   # ==========================================================
 
   terraform-apply:
@@ -220,7 +252,11 @@ jobs:
 
     needs: terraform-plan
 
-    # Apply ONLY on feature branch push
+    # ======================================================
+    # APPLY ONLY ON FEATURE BRANCH PUSH
+    # PR → MAIN WILL NOT APPLY
+    # ======================================================
+
     if: |
       github.event_name == 'push' &&
       startsWith(github.ref, 'refs/heads/feature/')
@@ -228,34 +264,42 @@ jobs:
 
     steps:
 
-      # --------------------------------------------------------
+      # ======================================================
       # CHECKOUT
-      # --------------------------------------------------------
+      # ======================================================
 
       - name: Checkout Repository
         uses: actions/checkout@v4
 
 
-      # --------------------------------------------------------
-      # TERRAFORM
-      # --------------------------------------------------------
+      # ======================================================
+      # SETUP TERRAFORM
+      # ======================================================
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
 
-      # --------------------------------------------------------
+      # ======================================================
+      # TERRAFORM VERSION
+      # ======================================================
+
+      - name: Terraform Version
+        run: terraform version
+
+
+      # ======================================================
       # TERRAFORM INIT
-      # --------------------------------------------------------
+      # ======================================================
 
       - name: Terraform Init
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform init -backend=false
 
 
-      # --------------------------------------------------------
+      # ======================================================
       # AZURE LOGIN
-      # --------------------------------------------------------
+      # ======================================================
 
       - name: Azure Login
         uses: azure/login@v2
@@ -263,9 +307,9 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
 
-      # --------------------------------------------------------
-      # DOWNLOAD PLAN
-      # --------------------------------------------------------
+      # ======================================================
+      # DOWNLOAD TERRAFORM PLAN
+      # ======================================================
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
@@ -274,9 +318,9 @@ jobs:
           path: ${{ env.TF_WORKING_DIR }}
 
 
-      # --------------------------------------------------------
-      # VERIFY PLAN
-      # --------------------------------------------------------
+      # ======================================================
+      # VERIFY TERRAFORM PLAN
+      # ======================================================
 
       - name: Verify Terraform Plan
         working-directory: ${{ env.TF_WORKING_DIR }}
@@ -293,13 +337,18 @@ jobs:
 
           test -f tfplan
 
+          echo ""
           echo "tfplan found successfully."
 
 
-      # --------------------------------------------------------
+      # ======================================================
       # TERRAFORM APPLY
-      # --------------------------------------------------------
+      # ======================================================
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform apply -auto-approve tfplan
+        run: |
+          terraform apply \
+            -input=false \
+            -auto-approve \
+            tfplan
