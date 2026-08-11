@@ -111,21 +111,21 @@ Network_Interface_Card = {
 
 Storage_Account = {
   Storage-Account-1 = {
-    name                     = "frontendstorage879866"
+    name                     = "frontendstorage879879"
     location                 = "australiaeast"
     resource_group_name      = "Resource-Group-1"
     account_replication_type = "LRS"
     account_tier             = "Standard"
   }
   Storage-Account-2 = {
-    name                     = "backendstorage879866"
+    name                     = "backendstorage879879"
     location                 = "australiaeast"
     resource_group_name      = "Resource-Group-2"
     account_replication_type = "LRS"
     account_tier             = "Standard"
   }
   Storage-Account-3 = {
-    name                     = "databasestorage879866"
+    name                     = "databasestorage879879"
     location                 = "australiaeast"
     resource_group_name      = "Resource-Group-3"
     account_replication_type = "LRS"
@@ -136,19 +136,19 @@ Storage_Account = {
 Storage_Container = {
   Storage-Container-1 = {
     name                  = "frontend-container"
-    storage_account_name  = "frontendstorage879866"
+    storage_account_name  = "frontendstorage879879"
     container_access_type = "private"
     resource_group_name   = "Resource-Group-1"
   }
   Storage-Container-2 = {
     name                  = "backend-container"
-    storage_account_name  = "backendstorage879866"
+    storage_account_name  = "backendstorage879879"
     container_access_type = "blob"
     resource_group_name   = "Resource-Group-2"
   }
   Storage-Container-3 = {
     name                  = "database-container"
-    storage_account_name  = "databasestorage879866"
+    storage_account_name  = "databasestorage879879"
     container_access_type = "container"
     resource_group_name   = "Resource-Group-3"
   }
